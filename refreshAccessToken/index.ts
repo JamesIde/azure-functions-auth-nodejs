@@ -1,6 +1,6 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions"
-import { connectDb } from "../utilities/connectDb"
-import { genRefreshToken } from "../utilities/genToken"
+import { connectDb } from "../utilities/config/connectDb"
+import { genRefreshToken } from "../utilities/helpers/genToken"
 import userService from "../services/userService"
 
 const httpTrigger: AzureFunction = async function (

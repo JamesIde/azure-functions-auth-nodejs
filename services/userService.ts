@@ -1,19 +1,17 @@
 import * as bcrypt from "bcryptjs"
 import * as jwt from "jsonwebtoken"
 import { Context } from "@azure/functions"
-import { connectDb } from "../utilities/connectDb"
-import { User } from "../utilities/userModel"
+import { User } from "../utilities/models/userModel"
 import { parse, ParsedQs } from "qs"
-import { genAccessToken } from "../utilities/genToken"
-const getUsers = async ({ req, res }: Context) => {
-  try {
-    await connectDb()
-    const Users = await User.find({}).select("-password")
-    return Users
-  } catch (error) {
-    console.log("ERROR OCCURED --> ", error)
-    return error.message
+import { genAccessToken } from "../utilities/helpers/genToken"
+import { isAuth } from "../utilities/helpers/authMiddleware"
+
+const getUsers = async (userId: string) => {
+  const user = await User.findOne({ _id: userId }).select("-password")
+  if (!user) {
+    throw new Error("User not found")
   }
+  return user
 }
 
 const registerUser = async ({ req, res }: Context) => {
@@ -54,7 +52,7 @@ const registerUser = async ({ req, res }: Context) => {
   }
 }
 
-const loginUser = async ({ req, res }: Context) => {
+const loginUser = async ({ req, res }: Context, token: string) => {
   if (req.rawBody) {
     const parsedData: ParsedQs = parse(req.rawBody)
     const { email, password } = parsedData

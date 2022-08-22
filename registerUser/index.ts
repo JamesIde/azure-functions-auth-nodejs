@@ -1,7 +1,7 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions"
 import userService from "../services/userService"
-import { connectDb } from "../utilities/connectDb"
-import { genRefreshToken } from "../utilities/genToken"
+import { connectDb } from "../utilities/config/connectDb"
+import { genRefreshToken } from "../utilities/helpers/genToken"
 
 /*
 Register a user, return an access token and refresh token in a cookie

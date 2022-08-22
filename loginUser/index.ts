@@ -1,6 +1,6 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions"
-import { connectDb } from "../utilities/connectDb"
-import { genRefreshToken } from "../utilities/genToken"
+import { connectDb } from "../utilities/config/connectDb"
+import { genRefreshToken } from "../utilities/helpers/genToken"
 import userService from "../services/userService"
 /*
 Login a user, return an access token and refresh token in a cookie
@@ -12,10 +12,10 @@ const httpTrigger: AzureFunction = async function (
   context.log("HTTP trigger function processed a request.")
 
   let response: any
-
+  let token = "123"
   try {
     await connectDb()
-    response = await userService.loginUser(context)
+    response = await userService.loginUser(context, token)
 
     // User created, generate the refresh token for cookie
     const refreshToken = genRefreshToken(response.id)
