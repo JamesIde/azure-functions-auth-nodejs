@@ -18,12 +18,18 @@ const httpTrigger: AzureFunction = async function (
 
       context.res = {
         status: 200,
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: result,
       }
     } catch (error) {
       console.log("ERROR OCCURED --> ", error)
       context.res = {
         status: 500,
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: { message: error.message },
       }
     }

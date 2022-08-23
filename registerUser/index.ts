@@ -22,6 +22,9 @@ const httpTrigger: AzureFunction = async function (
     context.res = {
       status: 200,
       body: response,
+      headers: {
+        "Content-Type": "application/json",
+      },
       cookies: [
         {
           name: "jid",
@@ -35,6 +38,9 @@ const httpTrigger: AzureFunction = async function (
     console.log("ERROR OCCURED --> ", error)
     context.res = {
       status: 500,
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: { message: error.message },
     }
   }

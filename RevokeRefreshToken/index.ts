@@ -20,10 +20,16 @@ const httpTrigger: AzureFunction = async function (
     context.res = {
       status: 200,
       body: true,
+      headers: {
+        "Content-Type": "application/json",
+      },
     }
   } catch (error) {
     context.res = {
       status: 500,
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: error,
     }
   }
