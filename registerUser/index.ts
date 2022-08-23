@@ -10,8 +10,6 @@ const httpTrigger: AzureFunction = async function (
   context: Context,
   req: HttpRequest
 ): Promise<void> {
-  context.log("HTTP trigger function processed a request.")
-
   let response: any
 
   try {
@@ -19,15 +17,15 @@ const httpTrigger: AzureFunction = async function (
     response = await userService.registerUser(context)
 
     // User created, generate the refresh token for cookie
-    const refreshToken = genRefreshToken(response.id)
-
+    const refreshToken = genRefreshToken(response.id as string)
+    console.log("REFRESH TOKEN --> ", refreshToken)
     context.res = {
       status: 200,
       body: response,
       cookies: [
         {
           name: "jid",
-          value: refreshToken,
+          value: refreshToken.toString(),
           maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
           httpOnly: true,
         },

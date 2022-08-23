@@ -1,9 +1,10 @@
 import mongoose, { Schema } from "mongoose"
 
-interface IUser {
+export interface IUser {
   name: string
   email: string
   password: string
+  tokenVersion: number
 }
 
 const userSchema = new Schema<IUser>({
@@ -15,6 +16,10 @@ const userSchema = new Schema<IUser>({
   },
   password: {
     type: String,
+  },
+  tokenVersion: {
+    type: Number,
+    default: 0,
   },
 })
 

@@ -4,8 +4,14 @@ import { Context } from "@azure/functions"
 import { User } from "../utilities/models/userModel"
 import { parse, ParsedQs } from "qs"
 import { genAccessToken } from "../utilities/helpers/genToken"
-import { isAuth } from "../utilities/helpers/authMiddleware"
 
+//////////////////////////////////////////////////////////
+//// A collection of services to enable authentication////
+//////////////////////////////////////////////////////////
+
+/*
+Middleware and token tester
+*/
 const getUsers = async (userId: string) => {
   const user = await User.findOne({ _id: userId }).select("-password")
   if (!user) {
@@ -13,8 +19,15 @@ const getUsers = async (userId: string) => {
   }
   return user
 }
-
+/*
+Register a user
+*/
 const registerUser = async ({ req, res }: Context) => {
+  /*
+  Note:  Azure Functions does not automatically parse urlencoded data to json.
+  You must parse the body yourself using qs parser library.
+  https://dev.to/estruyf/parse-application-x-www-form-urlencoded-in-azure-function-61j
+  */
   if (req.rawBody) {
     const parsedData: ParsedQs = parse(req.rawBody)
     const { name, email, password } = parsedData
@@ -28,7 +41,7 @@ const registerUser = async ({ req, res }: Context) => {
       throw new Error("User already exists")
     }
 
-    const hashPwd = await bcrypt.hash(password.toString(), 12)
+    const hashPwd = await bcrypt.hash(password as string, 12)
 
     const user = new User({
       name,
@@ -52,7 +65,11 @@ const registerUser = async ({ req, res }: Context) => {
   }
 }
 
-const loginUser = async ({ req, res }: Context, token: string) => {
+/*
+Login a user
+*/
+const loginUser = async ({ req, res }: Context) => {
+  // See note in register for raw body parsing
   if (req.rawBody) {
     const parsedData: ParsedQs = parse(req.rawBody)
     const { email, password } = parsedData
@@ -66,7 +83,7 @@ const loginUser = async ({ req, res }: Context, token: string) => {
       throw new Error("User not found")
     }
 
-    const isMatch = await bcrypt.compare(password.toString(), user.password)
+    const isMatch = await bcrypt.compare(password as string, user.password)
     if (!isMatch) {
       throw new Error("Incorrect password")
     }
@@ -80,23 +97,45 @@ const loginUser = async ({ req, res }: Context, token: string) => {
   }
 }
 
+/*
+Refresh the access token
+*/
 const refreshAccessToken = async ({ req, res }: Context) => {
+  // At any stage the auth fails, we return an empty access token.
+  // Get token from cookie
   const token = req.headers.cookie
   if (!token) {
-    return ""
+    return {
+      ok: false,
+      accessToken: "",
+    }
   }
-  // Split it like a auth bearer token
+  // Split token
   const refreshToken = token.split(";")[0].split("=")[1]
   let payload: any
   try {
     payload = jwt.verify(refreshToken, process.env.REFRESH_SECRET)
   } catch (error) {
-    return ""
+    return {
+      ok: false,
+      accessToken: "",
+    }
   }
-  /// Token is valid
-  const user = await User.findOne({ id: payload.id })
-  if (user._id.toString() !== payload.id) {
-    return ""
+  // Check if the user matches the user id
+  const user = await User.findOne({ id: payload.userId })
+  if (user._id.toString() !== payload.userId) {
+    return {
+      ok: false,
+      accessToken: "",
+    }
+  }
+
+  // Check if the token version matches, in the event someone gets hacked or forgets pwd.
+  if (user.tokenVersion !== payload.tokenVersion) {
+    return {
+      ok: false,
+      accessToken: "",
+    }
   }
 
   // Token is valid, generate new access token
@@ -105,7 +144,7 @@ const refreshAccessToken = async ({ req, res }: Context) => {
     accessToken: genAccessToken(user._id.toString()),
   }
 }
-
+// Bundle and export
 const userService = {
   getUsers,
   registerUser,

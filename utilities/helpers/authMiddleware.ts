@@ -29,7 +29,7 @@ export function isAuth(req: any, context: Context) {
     return decoded.id
   } catch (error) {
     context.res = {
-      status: 401,
+      status: 403,
       body: { message: error.message },
     }
   }
