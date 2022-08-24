@@ -15,10 +15,8 @@ const httpTrigger: AzureFunction = async function (
   try {
     await connectDb()
     response = await userService.registerUser(context)
-
     // User created, generate the refresh token for cookie
     const refreshToken = genRefreshToken(response.id as string)
-    console.log("REFRESH TOKEN --> ", refreshToken)
     context.res = {
       status: 200,
       body: response,
@@ -44,13 +42,6 @@ const httpTrigger: AzureFunction = async function (
       body: { message: error.message },
     }
   }
-
-  // Similar to getUsers, a try catch. On result return, send cookie and return. Need to catch possible errors here
-  // Within service, send access token
-  // context.res = {
-  //     // status: 200, /* Defaults to 200 */
-  //     body: responseMessage
-  // };
 }
 
 export default httpTrigger

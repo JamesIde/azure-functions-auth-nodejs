@@ -30,6 +30,9 @@ export function isAuth(req: any, context: Context) {
   } catch (error) {
     context.res = {
       status: 403,
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: { message: error.message },
     }
   }

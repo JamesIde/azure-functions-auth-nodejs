@@ -28,40 +28,38 @@ const registerUser = async ({ req, res }: Context) => {
   You must parse the body yourself using qs parser library.
   https://dev.to/estruyf/parse-application-x-www-form-urlencoded-in-azure-function-61j
   */
-  if (req.rawBody) {
-    const parsedData: ParsedQs = parse(req.rawBody)
-    const { name, email, password } = parsedData
 
-    if (!name || !email || !password) {
-      throw new Error("Please provide all required fields")
-    }
+  const parsedData: ParsedQs = parse(req.rawBody)
+  const { name, email, password } = parsedData
 
-    const isUserExist = await User.findOne({ email: email })
-    if (isUserExist) {
-      throw new Error("User already exists")
-    }
+  if (!name || !email || !password) {
+    throw new Error("Please provide all required fields")
+  }
 
-    const hashPwd = await bcrypt.hash(password as string, 12)
+  const isUserExist = await User.findOne({ email: email })
+  if (isUserExist) {
+    throw new Error("User already exists")
+  }
 
-    const user = new User({
-      name,
-      email,
-      password: hashPwd,
-    })
+  const hashPwd = await bcrypt.hash(password as string, 12)
 
-    const newUser = await user.save()
+  const user = new User({
+    name,
+    email,
+    password: hashPwd,
+  })
 
-    if (newUser) {
-      // Return access token
-      return {
-        id: newUser._id,
-        accessToken: genAccessToken(newUser._id.toString()),
-      }
-    } else {
-      throw new Error("User not created")
-    }
-  } else {
-    throw new Error("An error occured, please try again")
+  const newUser = await user.save()
+
+  if (!newUser) {
+    // Return access token
+    throw new Error("User not created")
+  }
+  return {
+    id: newUser._id,
+    name: newUser.name,
+    email: newUser.email,
+    accessToken: genAccessToken(newUser._id.toString()),
   }
 }
 
@@ -70,30 +68,28 @@ Login a user
 */
 const loginUser = async ({ req, res }: Context) => {
   // See note in register for raw body parsing
-  if (req.rawBody) {
-    const parsedData: ParsedQs = parse(req.rawBody)
-    const { email, password } = parsedData
+  const parsedData: ParsedQs = parse(req.rawBody)
+  const { email, password } = parsedData
 
-    if (!email || !password) {
-      throw new Error("Please provide all required fields")
-    }
+  if (!email || !password) {
+    throw new Error("Please provide all required fields")
+  }
 
-    const user = await User.findOne({ email: email })
-    if (!user) {
-      throw new Error("User not found")
-    }
+  const user = await User.findOne({ email: email })
+  if (!user) {
+    throw new Error("User not found")
+  }
 
-    const isMatch = await bcrypt.compare(password as string, user.password)
-    if (!isMatch) {
-      throw new Error("Incorrect password")
-    }
+  const isMatch = await bcrypt.compare(password as string, user.password)
+  if (!isMatch) {
+    throw new Error("Incorrect password")
+  }
 
-    return {
-      id: user._id,
-      accessToken: genAccessToken(user._id.toString()),
-    }
-  } else {
-    throw new Error("An error occured, please try again")
+  return {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    accessToken: genAccessToken(user._id.toString()),
   }
 }
 
@@ -101,7 +97,10 @@ const loginUser = async ({ req, res }: Context) => {
 Refresh the access token
 */
 const refreshAccessToken = async ({ req, res }: Context) => {
-  // At any stage the auth fails, we return an empty access token.
+  /* 
+  At any stage the auth fails, we return an empty access token.
+  */
+
   // Get token from cookie
   const token = req.headers.cookie
   if (!token) {
